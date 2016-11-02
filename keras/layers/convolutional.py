@@ -160,7 +160,7 @@ class Convolution1D(Layer):
     def call(self, x, mask=None):
         if mask is not None:
             mask = K.expand_dims(mask, dim=-1)
-            x *= (~mask) # zero out masked elements
+            x *= mask # zero out masked elements
         x = K.expand_dims(x, 2)  # add a dummy dimension
         output = K.conv2d(x, self.W, strides=self.subsample,
                           border_mode=self.border_mode,
