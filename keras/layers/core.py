@@ -679,17 +679,18 @@ class Dense(Layer):
 
         self.bias = bias
         self.initial_weights = weights
-        self.input_spec = [InputSpec(ndim=2)]
+        self.supports_masking = True
+        #self.input_spec = [InputSpec(ndim=2)]
 
         if self.input_dim:
             kwargs['input_shape'] = (self.input_dim,)
         super(Dense, self).__init__(**kwargs)
 
     def build(self, input_shape):
-        assert len(input_shape) == 2
-        input_dim = input_shape[1]
+        input_dim = input_shape[-1]
+        shape = tuple([None]*(len(input_shape)-1)) + (input_dim,)
         self.input_spec = [InputSpec(dtype=K.floatx(),
-                                     shape=(None, input_dim))]
+                                     shape=shape)]
 
         self.W = self.init((input_dim, self.output_dim),
                            name='{}_W'.format(self.name))
@@ -723,6 +724,9 @@ class Dense(Layer):
             self.set_weights(self.initial_weights)
             del self.initial_weights
 
+    def compute_mask(self, x, mask=None):
+        return mask
+
     def call(self, x, mask=None):
         output = K.dot(x, self.W)
         if self.bias:
@@ -730,8 +734,8 @@ class Dense(Layer):
         return self.activation(output)
 
     def get_output_shape_for(self, input_shape):
-        assert input_shape and len(input_shape) == 2
-        return (input_shape[0], self.output_dim)
+        assert input_shape
+        return input_shape[:-1] + (self.output_dim,)
 
     def get_config(self):
         config = {'output_dim': self.output_dim,

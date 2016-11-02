@@ -2,104 +2,129 @@ import numpy as np
 from . import backend as K
 from .utils.generic_utils import get_from_module
 
+def _weighted_masked_mean(array, weights, mask):
+    if weights is None and mask is None:
+        return K.mean(array)
+    if weights is None:
+        weights = 1
+    else:
+        while weights.ndim < array.ndim:
+            weights = K.expand_dims(weights, dim=-1)
+    if mask is None:
+        mask = 1
+    else:
+        while mask.ndim < array.ndim:
+            mask = K.expand_dims(mask, dim=-1)
+    weights *= mask
+    return (weights*array).sum()/weights.sum()
 
-def binary_accuracy(y_true, y_pred):
+def binary_accuracy(y_true, y_pred, weights=None, mask=None):
     '''Calculates the mean accuracy rate across all predictions for binary
     classification problems
     '''
-    return K.mean(K.equal(y_true, K.round(y_pred)))
+    correct = K.equal(y_true, K.round(y_pred))
+    return _weighted_masked_mean(correct, weights, mask)
 
 
-def categorical_accuracy(y_true, y_pred):
+def categorical_accuracy(y_true, y_pred, weights=None, mask=None):
     '''Calculates the mean accuracy rate across all predictions for
     multiclass classification problems
     '''
-    return K.mean(K.equal(K.argmax(y_true, axis=-1),
-                  K.argmax(y_pred, axis=-1)))
+    correct = K.equal(K.argmax(y_true, axis=-1), K.argmax(y_pred, axis=-1))
+    return _weighted_masked_mean(correct, weights, mask)
 
 
-def sparse_categorical_accuracy(y_true, y_pred):
+def sparse_categorical_accuracy(y_true, y_pred, weights=None, mask=None):
     '''Same as categorical_accuracy, but useful when the predictions are for
     sparse targets
     '''
-    return K.mean(K.equal(K.max(y_true, axis=-1),
-                          K.cast(K.argmax(y_pred, axis=-1), K.floatx())))
+    correct = K.equal(K.max(y_true, axis=-1), K.cast(K.argmax(y_pred, axis=-1), K.floatx()))
+    return _weighted_masked_mean(correct, weights, mask)
 
 
-def top_k_categorical_accuracy(y_true, y_pred, k=5):
+def top_k_categorical_accuracy(y_true, y_pred, weights=None, mask=None, k=5):
     '''Calculates the top-k categorical accuracy rate, i.e. success when the
     target class is within the top-k predictions provided
     '''
-    return K.mean(K.in_top_k(y_pred, K.argmax(y_true, axis=-1), k))
+    correct = K.in_top_k(y_pred, K.argmax(y_true, axis=-1), k)
+    return _weighted_masked_mean(correct, weights, mask)
 
 
-def mean_squared_error(y_true, y_pred):
+def mean_squared_error(y_true, y_pred, weights=None, mask=None):
     '''Calculates the mean squared error (mse) rate
     between predicted and target values
     '''
-    return K.mean(K.square(y_pred - y_true))
+    sq_err = K.square(y_pred - y_true)
+    return _weighted_masked_mean(sq_error, weights, mask)
 
 
-def mean_absolute_error(y_true, y_pred):
+def mean_absolute_error(y_true, y_pred, weights=None, mask=None):
     '''Calculates the mean absolute error (mae) rate
     between predicted and target values
     '''
-    return K.mean(K.abs(y_pred - y_true))
+    abs_err = K.abs(y_pred - y_true)
+    return _weighted_masked_mean(abs_err, weights, mask)
 
 
-def mean_absolute_percentage_error(y_true, y_pred):
+def mean_absolute_percentage_error(y_true, y_pred, weights=None, mask=None):
     '''Calculates the mean absolute percentage error (mape) rate
     between predicted and target values
     '''
     diff = K.abs((y_true - y_pred) / K.clip(K.abs(y_true), K.epsilon(), np.inf))
-    return 100. * K.mean(diff)
+    return 100. * _weighted_masked_mean(diff, weights, mask)
 
 
-def mean_squared_logarithmic_error(y_true, y_pred):
+def mean_squared_logarithmic_error(y_true, y_pred, weights=None, mask=None):
     '''Calculates the mean squared logarithmic error (msle) rate
     between predicted and target values
     '''
     first_log = K.log(K.clip(y_pred, K.epsilon(), np.inf) + 1.)
     second_log = K.log(K.clip(y_true, K.epsilon(), np.inf) + 1.)
-    return K.mean(K.square(first_log - second_log))
+    sq_diff = K.square(first_log - second_log)
+    return _weighted_masked_mean(sq_diff, weights, mask)
 
 
-def hinge(y_true, y_pred):
+def hinge(y_true, y_pred, weights=None, mask=None):
     '''Calculates the hinge loss, which is defined as
     `max(1 - y_true * y_pred, 0)`
     '''
-    return K.mean(K.maximum(1. - y_true * y_pred, 0.))
+    hloss = K.maximum(1. - y_true * y_pred, 0.)
+    return _weighted_masked_mean(hloss, weights, mask)
 
 
-def squared_hinge(y_true, y_pred):
+def squared_hinge(y_true, y_pred, weights=None, mask=None):
     '''Calculates the squared value of the hinge loss
     '''
-    return K.mean(K.square(K.maximum(1. - y_true * y_pred, 0.)))
+    sq_hinge = K.square(K.maximum(1. - y_true * y_pred, 0.))
+    return _weighted_masked_mean(sq_hinge, weights, mask)
 
 
-def categorical_crossentropy(y_true, y_pred):
+def categorical_crossentropy(y_true, y_pred, weights=None, mask=None):
     '''Calculates the cross-entropy value for multiclass classification
     problems. Note: Expects a binary class matrix instead of a vector
     of scalar classes.
     '''
-    return K.mean(K.categorical_crossentropy(y_pred, y_true))
+    cross_entropy = K.categorical_crossentropy(y_pred, y_true)
+    return _weighted_masked_mean(cross_entropy, weights, mask)
 
 
-def sparse_categorical_crossentropy(y_true, y_pred):
+def sparse_categorical_crossentropy(y_true, y_pred, weights=None, mask=None):
     '''Calculates the cross-entropy value for multiclass classification
     problems with sparse targets. Note: Expects an array of integer
     classes. Labels shape must have the same number of dimensions as
     output shape. If you get a shape error, add a length-1 dimension
     to labels.
     '''
-    return K.mean(K.sparse_categorical_crossentropy(y_pred, y_true))
+    cross_entropy = K.sparse_categorical_crossentropy(y_pred, y_true) 
+    return _weighted_masked_mean(cross_entropy, weights, mask)
 
 
-def binary_crossentropy(y_true, y_pred):
+def binary_crossentropy(y_true, y_pred, weights=None, mask=None):
     '''Calculates the cross-entropy value for binary classification
     problems.
     '''
-    return K.mean(K.binary_crossentropy(y_pred, y_true))
+    cross_entropy = K.binary_crossentropy(y_pred, y_true)
+    return _weighted_masked_mean(cross_entropy, weights, mask)
 
 
 def kullback_leibler_divergence(y_true, y_pred):

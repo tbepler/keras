@@ -101,6 +101,10 @@ class Convolution1D(Layer):
         self.W_constraint = constraints.get(W_constraint)
         self.b_constraint = constraints.get(b_constraint)
 
+        # only do masking for 'same' border_mode for now
+        if border_mode == 'same':
+            self.supports_masking = True
+
         self.bias = bias
         self.input_spec = [InputSpec(ndim=3)]
         self.initial_weights = weights
@@ -150,7 +154,13 @@ class Convolution1D(Layer):
                                     self.subsample[0])
         return (input_shape[0], length, self.nb_filter)
 
+    def compute_mask(self, x, mask=None):
+        return mask
+
     def call(self, x, mask=None):
+        if mask is not None:
+            mask = K.expand_dims(mask, dim=-1)
+            x *= (~mask) # zero out masked elements
         x = K.expand_dims(x, 2)  # add a dummy dimension
         output = K.conv2d(x, self.W, strides=self.subsample,
                           border_mode=self.border_mode,

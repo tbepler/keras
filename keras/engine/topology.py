@@ -949,7 +949,7 @@ class InputLayer(Layer):
     def __init__(self, input_shape=None, batch_input_shape=None,
                  input_dtype=None, input_tensor=None, sparse=False, name=None):
         self.input_spec = None
-        self.supports_masking = False
+        self.supports_masking = True
         self.uses_learning_phase = False
         self.trainable = False
         self.built = True

@@ -655,6 +655,8 @@ class Model(Container):
         for i in range(len(self.outputs)):
             y_true = self.targets[i]
             y_pred = self.outputs[i]
+            sample_weight = sample_weights[i]
+            mask = masks[i]
             output_metrics = nested_metrics[i]
 
             for metric in output_metrics:
@@ -671,10 +673,12 @@ class Model(Container):
                     else:
                         acc_fn = metrics_module.categorical_accuracy
 
-                    append_metric(i, 'acc', acc_fn(y_true, y_pred))
+                    # metrics interface is now (y_true, y_pred, sample_weight, mask)
+                    append_metric(i, 'acc', acc_fn(y_true, y_pred, weights=sample_weight, mask=mask))
                 else:
                     metric_fn = metrics_module.get(metric)
-                    metric_result = metric_fn(y_true, y_pred)
+                    # metrics interface is now (y_true, y_pred, sample_weight, mask)
+                    metric_result = metric_fn(y_true, y_pred, weights=sample_weight, mask=mask)
 
                     if not isinstance(metric_result, dict):
                         metric_result = {
