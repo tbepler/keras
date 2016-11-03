@@ -3,6 +3,10 @@ import numpy as np
 from . import backend as K
 from .utils.generic_utils import get_from_module
 
+def radians_mse(y_true, y_pred):
+    d1 = K.square(y_true - y_pred)
+    d2 = K.square(np.pi - K.maximum(y_true, y_pred) + K.minimum(y_true, y_pred) + np.pi)
+    return K.minimum(d1, d2)
 
 def mean_squared_error(y_true, y_pred):
     return K.mean(K.square(y_pred - y_true), axis=-1)

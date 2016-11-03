@@ -1,5 +1,10 @@
 from __future__ import absolute_import
 from . import backend as K
+import numpy as np
+
+
+def radians(x):
+    return x % (2*np.pi) - np.pi
 
 
 def softmax(x):
