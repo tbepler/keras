@@ -8,6 +8,11 @@ def radians_mse(y_true, y_pred):
     d2 = K.square(np.pi - K.maximum(y_true, y_pred) + K.minimum(y_true, y_pred) + np.pi)
     return K.minimum(d1, d2)
 
+
+def von_mises(y_true, y_pred, kappa=1):
+    return -kappa*K.cos(y_true-y_pred)
+
+
 def mean_squared_error(y_true, y_pred):
     return K.mean(K.square(y_pred - y_true), axis=-1)
 
