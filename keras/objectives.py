@@ -10,7 +10,7 @@ def radians_mse(y_true, y_pred):
 
 
 def von_mises(y_true, y_pred, kappa=1):
-    return -kappa*K.cos(y_true-y_pred)
+    return -kappa*K.cos(y_true-y_pred).mean(axis=-1)
 
 
 def mean_squared_error(y_true, y_pred):
