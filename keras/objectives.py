@@ -15,7 +15,7 @@ def circular_mae(y_true, y_pred):
     return K.mean(K.minimum(d1, d2), axis=-1)
 
 
-def von_mises(y_true, y_pred, kappa=2):
+def von_mises(y_true, y_pred, kappa=1):
     return -kappa*(y_true-y_pred).cos().mean(axis=-1) + kappa
 
 

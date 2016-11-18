@@ -16,7 +16,9 @@ def _weighted_masked_mean(array, weights, mask):
         while mask.ndim < array.ndim:
             mask = K.expand_dims(mask, dim=-1)
     weights *= mask
-    return (weights*array).sum()/weights.sum()
+    norm = weights.sum()
+    norm = K.switch(K.equal(norm, 0), 1, norm)
+    return (weights*array).sum()/norm
 
 def binary_accuracy(y_true, y_pred, weights=None, mask=None):
     '''Calculates the mean accuracy rate across all predictions for binary

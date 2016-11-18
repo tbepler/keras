@@ -330,6 +330,28 @@ def weighted_objective(fn):
     def weighted(y_true, y_pred, weights, mask=None):
         # score_array has ndim >= 2
         score_array = fn(y_true, y_pred)
+
+        if mask is None:
+            mask = K.ones_like(score_array)
+
+        if weights is not None:
+            ndim = K.ndim(mask)
+            weight_ndim = K.ndim(weights)
+            if ndim == weight_ndim:
+                mask *= weights
+            else:
+                mask_mean = K.mean(mask, axis=list(range(weight_ndim, ndim)))
+                weights /= mask_mean
+                mask *= K.expand_dims(weights, range(weight_ndim, ndim))
+                weights *= mask
+
+        score_array *= mask
+        score = K.sum(score_array)
+        norm = K.sum(mask)
+        norm = K.switch(K.equal(norm, 0), 1, norm)
+        return score/norm
+
+        """
         if mask is not None:
             # Cast the mask to floatX to avoid float64 upcasting in theano
             mask = K.cast(mask, K.floatx())
@@ -337,7 +359,15 @@ def weighted_objective(fn):
             score_array *= mask
             #  the loss per batch should be proportional
             #  to the number of unmasked samples.
-            score_array /= K.mean(mask)
+            norm = K.mean(mask)
+            norm = K.switch(K.equal(norm, 0), 1, norm)
+            score_array /= norm
+            #  also apply to the weights
+            if weights is not None:
+                ndim = K.ndim(mask)
+                weight_ndim = K.ndim(weights)
+                mask = K.mean(mask, axis=list(range(weight_ndim, ndim)))
+                weights *= mask
 
         # reduce score_array to same ndim as weight array
         ndim = K.ndim(score_array)
@@ -347,8 +377,11 @@ def weighted_objective(fn):
         # apply sample weighting
         if weights is not None:
             score_array *= weights
-            score_array /= K.mean(K.cast(K.not_equal(weights, 0), K.floatx()))
+            norm = K.mean(K.cast(K.not_equal(weights, 0), K.floatx()))
+            norm = K.switch(K.equal(norm, 0), 1, norm)
+            score_array /= norm
         return K.mean(score_array)
+        """
     return weighted
 
 
