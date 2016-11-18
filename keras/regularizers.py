@@ -99,6 +99,45 @@ class WeightRegularizer(Regularizer):
                 'l1': float(self.l1),
                 'l2': float(self.l2)}
 
+class OrthogonalRegularizer(Regularizer):
+
+    def __init__(self, l1=0., l2=0.):
+        self.l1 = K.cast_to_floatx(l1)
+        self.l2 = K.cast_to_floatx(l2)
+        self.uses_learning_phase = True
+        self.p = None
+
+    def set_param(self, p):
+        if self.p is not None:
+            raise Exception('Regularizers cannot be reused. '
+                            'Instantiate one regularizer per layer.')
+        self.p = p
+
+    def __call__(self, loss):
+        if self.p is None:
+            raise Exception('Need to call `set_param` on '
+                            'OrthogonalRegularizer instance '
+                            'before calling the instance. '
+                            'Check that you are not passing '
+                            'a WeightRegularizer instead of an '
+                            'ActivityRegularizer '
+                            '(i.e. activity_regularizer="l2" instead '
+                            'of activity_regularizer="activity_l2".')
+        regularized_loss = loss
+        WW = self.p.T.dot(self.p)
+        dim1, dim2 = K.eval(K.shape(WW))  # number of neurons in the layer
+        A = WW - K.eye(dim1)
+        if self.l1:
+            regularized_loss += self.l1 * K.sum(K.abs(A))
+        if self.l2:
+            regularized_loss += self.l2 * K.sum(K.square(A))
+        return K.in_train_phase(regularized_loss, loss)
+
+    def get_config(self):
+        return {'name': self.__class__.__name__,
+                'l1': float(self.l1),
+                'l2': float(self.l2)}
+
 
 class ActivityRegularizer(Regularizer):
 

@@ -49,6 +49,17 @@ def top_k_categorical_accuracy(y_true, y_pred, weights=None, mask=None, k=5):
     correct = K.in_top_k(y_pred, K.argmax(y_true, axis=-1), k)
     return _weighted_masked_mean(correct, weights, mask)
 
+def circular_mse(y_true, y_pred, weights=None, mask=None):
+    d1 = K.square(y_true - y_pred)
+    d2 = K.square(2*np.pi - K.maximum(y_true, y_pred) + K.minimum(y_true, y_pred))
+    return _weighted_masked_mean(K.minimum(d1, d2), weights, mask)
+
+
+def circular_mae(y_true, y_pred, weights=None, mask=None):
+    d1 = K.abs(y_true - y_pred)
+    d2 = K.abs(2*np.pi - K.maximum(y_true, y_pred) + K.minimum(y_true, y_pred))
+    return _weighted_masked_mean(K.minimum(d1, d2), weights, mask)
+
 
 def mean_squared_error(y_true, y_pred, weights=None, mask=None):
     '''Calculates the mean squared error (mse) rate

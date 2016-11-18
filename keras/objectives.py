@@ -3,14 +3,20 @@ import numpy as np
 from . import backend as K
 from .utils.generic_utils import get_from_module
 
-def radians_mse(y_true, y_pred):
+def circular_mse(y_true, y_pred):
     d1 = K.square(y_true - y_pred)
-    d2 = K.square(np.pi - K.maximum(y_true, y_pred) + K.minimum(y_true, y_pred) + np.pi)
-    return K.minimum(d1, d2)
+    d2 = K.square(2*np.pi - K.maximum(y_true, y_pred) + K.minimum(y_true, y_pred))
+    return K.mean(K.minimum(d1, d2), axis=-1)
 
 
-def von_mises(y_true, y_pred, kappa=1):
-    return -kappa*K.cos(y_true-y_pred).mean(axis=-1)
+def circular_mae(y_true, y_pred):
+    d1 = K.abs(y_true - y_pred)
+    d2 = K.abs(2*np.pi - K.maximum(y_true, y_pred) + K.minimum(y_true, y_pred))
+    return K.mean(K.minimum(d1, d2), axis=-1)
+
+
+def von_mises(y_true, y_pred, kappa=2):
+    return -kappa*(y_true-y_pred).cos().mean(axis=-1) + kappa
 
 
 def mean_squared_error(y_true, y_pred):
